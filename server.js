@@ -269,6 +269,7 @@ app.get('/', serveFile('index.html'));
 app.get('/index.html', serveFile('index.html'));
 app.get('/script.js', serveFile('script.js'));
 app.get('/style.css', serveFile('style.css'));
+app.get('/assets/logo.jpg', serveFile('assets/logo.jpg'));
 
 // 1. Get WhatsApp connection status
 app.get('/api/bot-status', (req, res) => {
