@@ -1,0 +1,29 @@
+{
+  "name": "whatsapp-otp",
+  "version": "1.0.0",
+  "description": "Free, open-source passwordless authentication portal that delivers OTP codes via WhatsApp — no SMS fees, no paid gateway.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "whatsapp",
+    "otp",
+    "authentication",
+    "passwordless",
+    "baileys",
+    "vercel",
+    "open-source"
+  ],
+  "homepage": "https://github.com/your-username/whatsapp-otp#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/whatsapp-otp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/whatsapp-otp.git"
+  },
+  "scripts": {
+    "start": "node dev.js",
+    "dev": "node dev.js",
+    "vercel-dev": "vercel dev"
+  }
+}

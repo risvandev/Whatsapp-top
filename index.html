@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp OTP - Secure Sign-In</title>
+  <meta name="description" content="A highly secure, sleek, and passwordless OTP authentication portal. Experience seamless access management.">
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Animated Glowing Background Elements -->
+  <div class="bg-glow-container">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+  </div>
+
+  <!-- WhatsApp Pairing QR Code Overlay -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-card">
+      <div class="qr-header">
+        <div class="qr-logo">
+          <svg viewBox="0 0 16 16" fill="#25D366" xmlns="http://www.w3.org/2000/svg" class="qr-whatsapp-icon">
+            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+          </svg>
+        </div>
+        <h2 class="qr-title">Link WhatsApp Dispatcher</h2>
+        <p class="qr-subtitle">Scan the QR code below to connect your WhatsApp account as the secure OTP bot.</p>
+      </div>
+
+      <div class="qr-body">
+        <div class="qr-code-wrapper">
+          <div class="qr-spinner" id="qrSpinner"></div>
+          <img src="" alt="WhatsApp QR Code" class="qr-image" id="qrImage" style="display: none;">
+          <div class="qr-success-mark" id="qrSuccessMark" style="display: none;">
+            <svg viewBox="0 0 52 52" class="checkmark-icon">
+              <circle cx="26" cy="26" r="25" fill="none" class="circle"></circle>
+              <path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" class="check"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="qr-status" id="qrStatus">Connecting to WhatsApp bot gateway...</div>
+
+        <ol class="qr-instructions">
+          <li>Open <strong>WhatsApp</strong> on your mobile phone</li>
+          <li>Navigate to <strong>Settings</strong> > <strong>Linked Devices</strong></li>
+          <li>Tap <strong>Link a Device</strong> and point your camera to this screen</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="auth-container">
+    <div class="auth-card" id="authCard">
+      
+      <!-- Card Header -->
+      <header class="auth-header">
+        <!-- Bot Profile Block (shows connected WhatsApp account) -->
+        <div class="bot-profile-wrapper" id="botProfileWrapper">
+          <!-- Loaded state: profile pic + number -->
+          <div class="bot-profile-connected" id="botProfileConnected" style="display: none;">
+            <div class="bot-profile-avatar-ring">
+              <img id="botProfileAvatar" src="" alt="WhatsApp Profile" class="bot-profile-avatar">
+              <div id="botProfileAvatarFallback" class="bot-profile-avatar-fallback" style="display:none;"></div>
+              <span class="bot-online-dot"></span>
+            </div>
+            <span class="bot-profile-number" id="botProfileNumber">+91 ···</span>
+          </div>
+          <!-- Placeholder while connecting -->
+          <div class="bot-profile-placeholder" id="botProfilePlaceholder">
+            <div class="bot-profile-spinner"></div>
+          </div>
+        </div>
+
+        <h1 class="auth-title" id="authTitle">Secure Verification</h1>
+        <p class="auth-subtitle" id="authSubtitle">Enter your details to request a secure one-time passcode.</p>
+      </header>
+
+      <!-- Step 1: Details Form (Name & Mobile) -->
+      <section class="auth-step active" id="stepDetails">
+        <form id="formDetails" novalidate>
+          <div class="input-group">
+            <label for="inputName" class="input-label">Full Name</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <input type="text" id="inputName" class="form-input" placeholder="John Doe" autocomplete="name" required>
+            </div>
+            <span class="error-msg" id="errorName">Please enter your name</span>
+          </div>
+
+          <div class="input-group">
+            <label for="inputMobile" class="input-label">Mobile Number</label>
+            <div class="input-wrapper mobile-input-wrapper">
+              <select id="selectCountry" class="country-select" aria-label="Country Code">
+                <!-- Populated via Javascript -->
+              </select>
+              <input type="tel" id="inputMobile" class="form-input" placeholder="Phone number" autocomplete="tel" required>
+            </div>
+            <span class="error-msg" id="errorMobile">Please enter a valid mobile number</span>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btnSendOtp">
+            <span class="btn-text">Send OTP</span>
+            <span class="btn-loader"></span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Step 2: OTP Verification Form -->
+      <section class="auth-step" id="stepOtp">
+        <button type="button" class="btn-back" id="btnBack" aria-label="Go back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Edit details
+        </button>
+
+        <form id="formOtp" novalidate>
+          <div class="input-group">
+            <label class="input-label centered">Enter 6-Digit Passcode</label>
+            <div class="otp-inputs-container">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 1">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 2">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 3">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 4">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 5">
+              <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required aria-label="Digit 6">
+            </div>
+            <span class="error-msg centered" id="errorOtp">Incorrect passcode. Please try again.</span>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btnVerifyOtp">
+            <span class="btn-text">Verify & Proceed</span>
+            <span class="btn-loader"></span>
+          </button>
+
+          <div class="resend-container">
+            <span class="resend-text">Didn't receive the code?</span>
+            <button type="button" class="btn-resend" id="btnResend" disabled>
+              Resend in <span id="timerVal">30</span>s
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Step 3: Success Screen -->
+      <section class="auth-step" id="stepSuccess">
+        <div class="success-wrapper">
+          <div class="success-avatar-container">
+            <img id="userAvatar" src="" alt="Profile Picture" class="success-avatar" style="display: none;">
+            <div id="userAvatarFallback" class="success-avatar-fallback"></div>
+            <div class="success-icon-badge">
+              <svg class="success-checkmark-mini" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+            </div>
+          </div>
+          <h2 class="success-title">Verification Successful</h2>
+          <p class="success-subtitle">Welcome, <span id="displayName">User</span>. Your session has been securely established.</p>
+          <button type="button" class="btn-submit secondary" id="btnReset">Sign Out</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Live Toast Notification (Simulates SMS receipt for demo purposes) -->
+  <div class="toast-notification" id="demoToast" role="alert" aria-live="assertive">
+    <div class="toast-icon">💬</div>
+    <div class="toast-content">
+      <div class="toast-title">SMS Simulation</div>
+      <div class="toast-body">Your WhatsApp OTP verification code is: <strong id="toastOtp">------</strong></div>
+    </div>
+    <button class="toast-close" id="btnToastClose" aria-label="Close message">×</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
