@@ -8,7 +8,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-white.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen)](https://nodejs.org)
-[![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black)](https://vercel.com)
 [![Self-hostable](https://img.shields.io/badge/Self--hostable-yes-blue)](#running-locally)
 
 </div>
@@ -19,7 +18,7 @@
 
 **WhatsApp OTP** is a free, open-source, self-hostable authentication system that delivers 6-digit OTP codes directly to a user's **WhatsApp** — powered by a spare phone number you already own.
 
-No paid SMS gateway. No Twilio. No third-party API costs. Just your own WhatsApp number acting as the OTP dispatcher.
+By merging the web UI frontend, database storage endpoints, and WhatsApp socket listener into a **single, self-contained Node.js Express application**, you can run the entire service under a single process and port. No Vercel configurations or complex setups required.
 
 ---
 
@@ -28,15 +27,14 @@ No paid SMS gateway. No Twilio. No third-party API costs. Just your own WhatsApp
 | Feature | Detail |
 |---|---|
 | 💬 **WhatsApp Delivery** | Sends OTPs via your own WhatsApp number using Baileys |
-| 🖥️ **Live Bot Profile** | Shows the dispatcher's profile picture & number in the UI |
+| 🖥️ **Live Bot Profile** | Shows the dispatcher's profile picture & name in the UI |
 | 🌍 **Country Selector** | Dropdown with flag emojis + per-country number validation |
 | 🔐 **Redis or Local Cache** | Upstash Redis in production; auto-falls back to local file for dev |
 | 📱 **Mobile-First** | Fully responsive — works great on phone and desktop |
 | 🎨 **Premium Dark UI** | Monochrome black-and-white theme, smooth micro-animations |
-| 🔒 **Bot Webhook Auth** | Shared-secret header guards the `/send-otp` webhook endpoint |
-| ♻️ **Anti-Spam Rotation** | Randomised OTP message templates to avoid WhatsApp detection |
+| 🔁 **Anti-Spam Rotation** | Randomised OTP message templates to avoid WhatsApp detection |
 | ⏱️ **5-Minute TTL** | OTP expires automatically; resend cooldown of 30 seconds |
-| 🚀 **One-Command Dev** | `npm run dev` starts everything — frontend + bot simultaneously |
+| 🚀 **One-Command Run** | `npm run dev` starts the entire app (UI + APIs + WhatsApp socket) |
 
 ---
 
@@ -46,10 +44,9 @@ No paid SMS gateway. No Twilio. No third-party API costs. Just your own WhatsApp
 2. [Project Structure](#project-structure)
 3. [Configuration](#configuration)
    - [Step 1 — Clone and install](#step-1--clone-and-install)
-   - [Step 2 — Configure root .env](#step-2--configure-root-env)
-   - [Step 3 — Configure bot .env](#step-3--configure-whatsapp-bot-env)
+   - [Step 2 — Configure environment](#step-2--configure-environment)
 4. [Running Locally](#running-locally)
-5. [Deploying to Vercel](#deploying-to-vercel)
+5. [Deploying to Production](#deploying-to-production)
 6. [Integrating into Your Own Website](#integrating-into-your-own-website)
 7. [API Reference](#api-reference)
 8. [Environment Variables Reference](#environment-variables-reference)
@@ -68,7 +65,7 @@ Before you begin, make sure you have:
 - **Node.js 18+** → [Download here](https://nodejs.org)
 - **npm** (comes with Node.js)
 - **A spare WhatsApp-registered phone number** — this will be the OTP sender. Do **not** use your primary number.
-- *(For production)* A free [Vercel](https://vercel.com) account and a free [Upstash](https://upstash.com) Redis database.
+- *(For production)* A free [Upstash](https://upstash.com) account (for Redis storage).
 
 ---
 
@@ -76,33 +73,25 @@ Before you begin, make sure you have:
 
 ```
 whatsapp-otp/
-├── api/
-│   ├── send-otp.js        # Serverless: generate OTP, cache it, call bot
-│   ├── verify-otp.js      # Serverless: compare OTP and clear cache
-│   └── profile-pic.js     # Serverless: fetch WhatsApp profile picture
-├── whatsapp-bot/
-│   ├── bot.js             # Express + Baileys WhatsApp gateway (port 5001)
-│   ├── package.json
-│   └── .env.example       # ← Template for bot environment variables
-├── index.html             # Main authentication UI
-├── style.css              # All styling (dark theme, animations)
-├── script.js              # Client logic, validation, API calls
-├── dev.js                 # Local dev orchestrator (starts both servers)
-├── vercel.json            # Vercel routing config
-├── .env.example           # ← Template for root environment variables
-├── .env                   # ← Your actual config (gitignored, you create this)
-├── AUTH_ARCHITECTURE.md   # System design documentation
-├── CONTRIBUTING.md
-└── LICENSE
+├── server.js              # Express app hosting all APIs and WhatsApp socket
+├── index.html             # Main authentication UI (served by server.js)
+├── style.css              # Custom styling (monochrome dark theme)
+├── script.js              # Client validation, polling, and verification
+├── package.json           # Scripts and dependencies
+├── .env.example           # Template for configuration settings
+├── .env                   # Local configuration (created by you, gitignored)
+├── CONTRIBUTING.md        # Contribution guidelines
+├── LICENSE                # MIT License
+└── README.md              # Project documentation
 ```
 
 ---
 
 ## Configuration
 
-This project uses **two separate `.env` files** — one for the root API server and one for the WhatsApp Bot.
+This project requires only a **single `.env` configuration file** at the root level.
 
-> **Important:** `.env` files are **never** committed to git (they're in `.gitignore`). You create them yourself by copying the provided `.env.example` templates.
+> **Important:** `.env` files are **never** committed to git (they are listed in `.gitignore`). You create them yourself by copying the provided `.env.example` template.
 
 ---
 
@@ -112,20 +101,15 @@ This project uses **two separate `.env` files** — one for the root API server 
 git clone https://github.com/your-username/whatsapp-otp.git
 cd whatsapp-otp
 
-# Install root dependencies
+# Install dependencies
 npm install
-
-# Install WhatsApp bot dependencies
-cd whatsapp-bot && npm install && cd ..
 ```
 
 ---
 
-### Step 2 — Configure root `.env`
+### Step 2 — Configure environment
 
-The root `.env` controls the **API server** (the Vercel serverless functions and local dev server).
-
-**Create the file by copying the example:**
+**Create the `.env` file by copying the example:**
 
 ```bash
 # On Linux / macOS
@@ -135,146 +119,66 @@ cp .env.example .env
 Copy-Item .env.example .env
 ```
 
-Now open `.env` and fill in your values. Here is the full template (same as `.env.example`) with explanations:
+Now open `.env` and set your values. Here is the template (same as `.env.example`):
 
 ```ini
-# ==============================================================================
-# LOCAL DEVELOPMENT CONFIGURATION (Required)
-# ==============================================================================
-
-# The URL where your WhatsApp Bot is running.
-# For local development this is always http://localhost:5001
-# For production (Vercel) set this to your deployed bot's public URL
-WHATSAPP_BOT_URL="http://localhost:5001"
-
-# A secret key shared between the API and the WhatsApp Bot.
-# This prevents anyone from triggering your bot without permission.
-# ⚠️  CHANGE THIS to any long random string before deploying!
-WHATSAPP_BOT_SECRET="change-this-to-a-long-random-secret"
-
+# The port the unified Express server will listen on (defaults to 3000)
+PORT=3000
 
 # ==============================================================================
-# VERCEL / PRODUCTION DEPLOYMENT ONLY (Not needed for local development)
+# UPSTASH REDIS CONFIGURATION (OPTIONAL for local development)
 # ==============================================================================
-# Upstash Redis credentials are only required when deploying to Vercel.
-# Locally, the system automatically uses a local file cache (.otp-cache.json).
+# For LOCAL development:
+#   Leave these commented out. The application will automatically fall back to
+#   a local JSON cache file (.otp-cache.json) to store pending OTPs.
 #
-# Get these values from: https://console.upstash.com → your Redis database → REST API
+# For PRODUCTION deployments (Render, Railway, Fly.io):
+#   Production servers are stateless. You must configure a cloud Redis cache
+#   to persist OTP codes securely. Get these from https://console.upstash.com
 #
-# KV_REST_API_URL="https://YOUR-DATABASE-ID.upstash.io"
-# KV_REST_API_TOKEN="YOUR_UPSTASH_REST_TOKEN"
+# UPSTASH_REDIS_REST_URL="https://your-db-name.upstash.io"
+# UPSTASH_REDIS_REST_TOKEN="your_upstash_token_here"
 ```
-
-> 💡 **For local development** you only need `WHATSAPP_BOT_URL` and `WHATSAPP_BOT_SECRET`. Leave the Redis lines commented out — the system will automatically save OTPs to a local file.
-
----
-
-### Step 3 — Configure WhatsApp bot `.env`
-
-The WhatsApp bot has its **own** separate `.env` inside the `whatsapp-bot/` folder.
-
-```bash
-# On Linux / macOS
-cp whatsapp-bot/.env.example whatsapp-bot/.env
-
-# On Windows (PowerShell)
-Copy-Item whatsapp-bot\.env.example whatsapp-bot\.env
-```
-
-Open `whatsapp-bot/.env` and set your values:
-
-```ini
-# Port the bot server listens on (default: 5001)
-PORT=5001
-
-# Must match WHATSAPP_BOT_SECRET in the root .env exactly!
-WHATSAPP_BOT_SECRET="change-this-to-a-long-random-secret"
-```
-
-> ⚠️ **Both `WHATSAPP_BOT_SECRET` values must be identical** — the root `.env` and the `whatsapp-bot/.env`. If they don't match, the API will be rejected by the bot.
 
 ---
 
 ## Running Locally
 
-Once both `.env` files are configured, start everything with a single command from the project root:
+To start the unified server, run:
 
 ```bash
 npm run dev
 ```
 
-This starts:
-- ✅ **Frontend + API server** on `http://localhost:3000`
-- ✅ **WhatsApp Bot** on `http://localhost:5001`
+This boots the Express server on `http://localhost:3000`.
 
 **First-time setup — Link your WhatsApp number:**
 
-1. Open `http://localhost:3000` in your browser
-2. A QR code overlay will appear automatically
-3. On your phone: **WhatsApp → Settings → Linked Devices → Link a Device**
-4. Scan the QR code
-5. The overlay disappears and your profile picture appears — you're connected!
+1. Open `http://localhost:3000` in your browser.
+2. A QR code overlay will appear on the screen.
+3. On your phone: Open **WhatsApp → Settings → Linked Devices → Link a Device**.
+4. Scan the QR code displayed on your screen or printed in your terminal.
+5. Once scanned, the overlay disappears and your profile picture/name will load into the status bar.
 
-> 🔁 The session is saved in `whatsapp-bot/auth_info_baileys/`. On subsequent starts, the bot reconnects automatically without needing to scan again.
-
-**Test it:**
-1. Select your country from the dropdown
-2. Enter your phone number
-3. Click **Send OTP**
-4. Check WhatsApp on that number — the code arrives within seconds
+> 🔁 The session is saved in `auth_info_baileys/` at the root level. On subsequent starts, the server reconnects automatically without requiring you to scan again.
 
 ---
 
-## Deploying to Vercel
+## Deploying to Production
 
-### 1. Push to GitHub
+Because this project runs as a standard Node.js Express server on a single port, you can deploy it in one click to any persistent node host:
 
-```bash
-git init
-git add .
-git commit -m "Initial release"
-git remote add origin https://github.com/your-username/whatsapp-otp.git
-git push -u origin main
-```
+### Option A: Railway (Recommended)
+1. Link your GitHub repository to Railway.
+2. Create a new service from the repository.
+3. Set your environment variables in the settings tab (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`).
+4. **Important**: Add a **Persistent Volume** mounted at `/app/auth_info_baileys` to keep your WhatsApp connection active between builds/restarts.
 
-### 2. Import to Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import your GitHub repository
-3. Leave all settings as default — Vercel auto-detects the project
-4. Click **Deploy**
-
-### 3. Set up Upstash Redis
-
-1. In your Vercel project, go to the **Storage** tab
-2. Click **Create Database → Upstash Redis**
-3. Vercel automatically injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` into your environment
-
-### 4. Deploy the WhatsApp Bot permanently
-
-The bot needs to run **24/7** on a persistent server. Recommended free options:
-
-| Platform | Free Tier | Notes |
-|---|---|---|
-| **[Render](https://render.com)** | Yes (sleeps after 15 min inactivity) | Good for low-traffic projects |
-| **[Railway](https://railway.app)** | $5/month | Always-on, easiest setup |
-| **[Fly.io](https://fly.io)** | Generous free allowance | Docker-based, most control |
-| **Your own VPS** | Varies | Full control, cheapest long-term |
-
-After deploying, check your platform's build logs — the QR code will appear there. Scan it once to link the bot. The session persists across restarts.
-
-### 5. Add environment variables to Vercel
-
-Go to your Vercel project → **Settings → Environment Variables** and add:
-
-| Variable | Value |
-|---|---|
-| `WHATSAPP_BOT_URL` | Your bot's public URL, e.g. `https://my-bot.onrender.com` |
-| `WHATSAPP_BOT_SECRET` | Your secret key (must match the bot's value) |
-
-### 6. Redeploy
-
-Trigger a new deployment. Your app is live! 🎉
+### Option B: Render
+1. Create a new **Web Service** on Render and connect your Git repository.
+2. Choose the `Node` runtime and set the start command to `npm start`.
+3. Add your environment variables in the dashboard.
+4. **Important**: Add a **Persistent Disk** mounted at `/opt/render/project/src/auth_info_baileys` (or equivalent path) to persist the WhatsApp pairing state.
 
 ---
 
@@ -282,22 +186,17 @@ Trigger a new deployment. Your app is live! 🎉
 
 Want to add WhatsApp OTP verification to your existing site? You can call the API endpoints directly from any frontend or backend.
 
-### How it works
-
 ```
 Your site's form → POST /api/send-otp → WhatsApp message sent to user
 User enters OTP  → POST /api/verify-otp → ✅ Verified / ❌ Rejected
 ```
-
----
 
 ### Step 1 — Send an OTP
 
 Make a `POST` request to `/api/send-otp`:
 
 ```js
-// Example: plain JavaScript fetch
-const response = await fetch('https://your-deployed-app.vercel.app/api/send-otp', {
+const response = await fetch('https://your-deployed-app.com/api/send-otp', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -327,15 +226,6 @@ const data = await response.json();
 }
 ```
 
-**Error response (`400`):**
-
-```json
-{
-  "success": false,
-  "message": "Name and mobile number are required."
-}
-```
-
 ---
 
 ### Step 2 — Verify the OTP
@@ -343,7 +233,7 @@ const data = await response.json();
 Once the user enters the code they received, verify it:
 
 ```js
-const response = await fetch('https://your-deployed-app.vercel.app/api/verify-otp', {
+const response = await fetch('https://your-deployed-app.com/api/verify-otp', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -378,92 +268,6 @@ if (data.success) {
 }
 ```
 
-**Failure response (`400`):**
-
-```json
-{
-  "success": false,
-  "message": "The OTP code is incorrect. Please try again."
-}
-```
-
-```json
-{
-  "success": false,
-  "message": "The OTP code has expired or is invalid. Please request a new one."
-}
-```
-
----
-
-### Complete integration example (HTML + JS)
-
-A minimal working example you can drop into any webpage:
-
-```html
-<!-- Step 1: Phone number form -->
-<form id="sendForm">
-  <input type="text" id="userName" placeholder="Your name" required>
-  <input type="tel" id="userPhone" placeholder="+91 98765 43210" required>
-  <button type="submit">Send OTP</button>
-</form>
-
-<!-- Step 2: OTP entry form (hidden initially) -->
-<form id="verifyForm" style="display:none">
-  <input type="text" id="otpInput" placeholder="Enter 6-digit code" maxlength="6" required>
-  <button type="submit">Verify</button>
-</form>
-
-<p id="statusMsg"></p>
-
-<script>
-  const API_BASE = 'https://your-deployed-app.vercel.app'; // ← change this
-  let phoneNumber = '';
-
-  document.getElementById('sendForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    phoneNumber = document.getElementById('userPhone').value;
-    const name = document.getElementById('userName').value;
-
-    const res = await fetch(`${API_BASE}/api/send-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, mobile: phoneNumber })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      document.getElementById('sendForm').style.display = 'none';
-      document.getElementById('verifyForm').style.display = 'block';
-      document.getElementById('statusMsg').textContent = '✅ OTP sent to your WhatsApp!';
-    } else {
-      document.getElementById('statusMsg').textContent = '❌ ' + data.message;
-    }
-  });
-
-  document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const otp = document.getElementById('otpInput').value;
-
-    const res = await fetch(`${API_BASE}/api/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mobile: phoneNumber, otp })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      document.getElementById('statusMsg').textContent = '🎉 Verified! Logging you in...';
-      // → Your login logic here (set cookie, redirect, etc.)
-    } else {
-      document.getElementById('statusMsg').textContent = '❌ ' + data.message;
-    }
-  });
-</script>
-```
-
-> 💡 **CORS note:** If your site is on a different domain, you may need to add your domain to the CORS allowed origins in `dev.js` (locally) and Vercel's headers config in `vercel.json`.
-
 ---
 
 ## API Reference
@@ -472,31 +276,18 @@ A minimal working example you can drop into any webpage:
 |---|---|---|
 | `POST /api/send-otp` | POST | Generate and send an OTP via WhatsApp |
 | `POST /api/verify-otp` | POST | Verify a submitted OTP code |
-| `GET /api/profile-pic?mobile=NUMBER` | GET | Get a WhatsApp user's profile picture URL |
+| `GET /api/profile-pic` | GET | Get a WhatsApp user's profile picture URL (uses query param `?mobile=NUMBER`) |
 | `GET /api/bot-status` | GET | Check WhatsApp bot connection status + QR |
 
 ---
 
 ## Environment Variables Reference
 
-### Root `.env`
-
-```ini
-# Required always
-WHATSAPP_BOT_URL="http://localhost:5001"         # URL of your WhatsApp Bot
-WHATSAPP_BOT_SECRET="your-secret-key-here"       # Shared auth secret
-
-# Required only for Vercel/production (get from Upstash dashboard)
-KV_REST_API_URL="https://YOUR-DB.upstash.io"
-KV_REST_API_TOKEN="YOUR_TOKEN"
-```
-
-### `whatsapp-bot/.env`
-
-```ini
-PORT=5001                                         # Bot server port
-WHATSAPP_BOT_SECRET="your-secret-key-here"       # Must match root .env!
-```
+| Variable | Description | Example / Format |
+|---|---|---|
+| `PORT` | Local port for Express (defaults to 3000) | `3000` |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST database URL | `https://your-db-name.upstash.io` |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | `your_upstash_token_here` |
 
 ---
 
@@ -506,55 +297,29 @@ The built-in UI supports validation for:
 
 🇮🇳 India · 🇺🇸 United States · 🇬🇧 United Kingdom · 🇦🇪 UAE · 🇸🇦 Saudi Arabia · 🇶🇦 Qatar · 🇨🇦 Canada · 🇦🇺 Australia · 🇩🇪 Germany
 
-**To add a country**, edit the `COUNTRIES` array in [`script.js`](script.js):
-
-```js
-{ 
-  code: 'SG',           // ISO 3166-1 alpha-2 country code
-  name: 'Singapore', 
-  dialCode: '+65', 
-  flag: '🇸🇬', 
-  minLength: 8, 
-  maxLength: 8, 
-  placeholder: '91234567',          // Example number shown in input
-  pattern: /^[689]\d{7}$/           // Regex to validate local numbers
-}
-```
+To add/edit countries, modify the `COUNTRIES` array in [`script.js`](script.js).
 
 ---
 
 ## Security Notes
 
-- **Change the default secret** — `WHATSAPP_BOT_SECRET` defaults to a placeholder. Always set your own long random value before deploying.
-- **OTP auto-deletes** — After successful verification, the OTP is deleted from the cache immediately (no replay attacks).
+- **OTP auto-deletes** — After successful verification, the OTP is deleted from the cache immediately (prevents replay attacks).
 - **5-minute TTL** — OTPs expire automatically even if never verified.
 - **Session files** — `auth_info_baileys/` contains your WhatsApp session tokens. These are in `.gitignore` and must never be committed.
 - **`.env` files are gitignored** — Only `.env.example` is committed. Never commit `.env`.
 
 ---
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report bugs, add countries, or submit Pull Requests.
-
----
-
 ## FAQ
 
 **Q: Is this against WhatsApp's Terms of Service?**  
-A: Using WhatsApp through the unofficial Baileys library is against WhatsApp's ToS. Your number could be banned. Use a dedicated spare number — not your personal one.
-
-**Q: The QR code isn't appearing.**  
-A: Make sure the WhatsApp bot started correctly (`npm run dev` should show `[WhatsApp Bot] Server is listening on port 5001`). The QR overlay polls automatically every 2 seconds.
+A: Using WhatsApp through the unofficial Baileys library is against WhatsApp's ToS. Your number could be banned. Use a dedicated spare number — not your primary one.
 
 **Q: My profile picture isn't showing.**  
 A: WhatsApp privacy settings may block picture access for non-contacts. The UI gracefully shows your name initial instead.
 
 **Q: Can the sender and receiver be the same number?**  
 A: Yes — useful for testing. The bot can send a code to itself.
-
-**Q: How do I integrate this with my backend (Node.js / Python / PHP)?**  
-A: See the [Integrating into Your Own Website](#integrating-into-your-own-website) section. The API is plain HTTP — any language can call it.
 
 ---
 
@@ -566,6 +331,6 @@ A: See the [Integrating into Your Own Website](#integrating-into-your-own-websit
 
 <div align="center">
 
-Made with ❤️ — Built on [Baileys](https://github.com/WhiskeySockets/Baileys) · Deployable on [Vercel](https://vercel.com) · Caches via [Upstash](https://upstash.com)
+Made with ❤️ — Built on [Baileys](https://github.com/WhiskeySockets/Baileys) · Caches via [Upstash](https://upstash.com)
 
 </div>
