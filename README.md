@@ -12,6 +12,12 @@
 
 </div>
 
+> [!CAUTION]
+> **DISCLAIMER: NOT PRODUCTION-READY**
+> This project uses an unofficial, reverse-engineered WhatsApp Web socket client (`@whiskeysockets/baileys`).
+> * **High Risk of Phone Number Ban**: WhatsApp strictly prohibits the use of unofficial clients and automated bots. Linking your number carries a **severe risk of permanent suspension/ban** by WhatsApp.
+> * **Educational & Testing Use Only**: This software is provided "as is" without warranty. It is designed for educational purposes, personal study, prototyping, and local testing. It is **not recommended** or suitable for production environments. Use at your own risk.
+
 ---
 
 ## What is this?
@@ -312,8 +318,8 @@ To add/edit countries, modify the `COUNTRIES` array in [`script.js`](script.js).
 
 ## FAQ
 
-**Q: Is this against WhatsApp's Terms of Service?**  
-A: Using WhatsApp through the unofficial Baileys library is against WhatsApp's ToS. Your number could be banned. Use a dedicated spare number — not your primary one.
+**Q: Is this against WhatsApp's Terms of Service, and is it production-ready?**  
+A: Yes, it violates WhatsApp's Terms of Service and carries a **severe risk of your number being permanently banned**. Because of this, **this project is NOT production-ready**. It is intended strictly for educational, hobby, and testing purposes. For production authentication setups, you should use official WhatsApp Business API platforms (such as Twilio).
 
 **Q: My profile picture isn't showing.**  
 A: WhatsApp privacy settings may block picture access for non-contacts. The UI gracefully shows your name initial instead.
