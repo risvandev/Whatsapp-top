@@ -3,7 +3,6 @@
 # ==============================================================================
 node_modules/
 jspm_packages/
-whatsapp-bot/node_modules/
 
 # ==============================================================================
 # Environment / Secrets (NEVER commit these)
@@ -18,7 +17,6 @@ whatsapp-bot/node_modules/
 # WhatsApp session (contains auth tokens — treat like a password)
 # ==============================================================================
 auth_info_baileys/
-whatsapp-bot/auth_info_baileys/
 
 # ==============================================================================
 # Local dev caches

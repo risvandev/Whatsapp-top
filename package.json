@@ -22,8 +22,14 @@
     "url": "https://github.com/your-username/whatsapp-otp.git"
   },
   "scripts": {
-    "start": "node dev.js",
-    "dev": "node dev.js",
-    "vercel-dev": "vercel dev"
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
   }
 }
